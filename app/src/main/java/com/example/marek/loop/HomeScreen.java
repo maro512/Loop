@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-public class Home extends AppCompatActivity {
+public class HomeScreen extends AppCompatActivity {
     private Button button;
 
 
@@ -28,7 +28,7 @@ public class Home extends AppCompatActivity {
     }
 
     public void startGameOffline (){
-        Intent i = new Intent(Home.this, AddPlayersScreen.class);
+        Intent i = new Intent(HomeScreen.this, AddPlayersScreen.class);
 
         startActivity(i);
     }

@@ -1,4 +1,4 @@
-package com.example.marek.loop;
+package com.example.marek.loop.GameModel;
 
 import java.util.HashMap;
 import java.util.Map;

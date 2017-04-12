@@ -1,4 +1,4 @@
-package com.example.marek.loop;
+package com.example.marek.loop.GameModel;
 
 /**
  * Created by marek on 11.04.17.
