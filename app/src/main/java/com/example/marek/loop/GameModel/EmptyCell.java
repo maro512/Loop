@@ -24,15 +24,31 @@ public class EmptyCell extends Cell
         if (black>2 || white>2) // Trzy linie tego samego koloru?
             return null; // Nie istnieje taka płytka!
         byte type = black==2 ? knownBlack : (byte) ~knownWhite;
-        forgetMe(); // Odepnij od sąsiadów
-        return new Tile(this,type);
+        Tile tile =  new Tile(getPosition(),type);
+        replaceMe(tile);
+        return tile;
+    }
+
+    public Tile createTile(byte type)
+    {
+        if (!tileFits(type)) throw new IllegalArgumentException("The given tile type does not fit.");
+        Tile tile =  new Tile(getPosition(),type);
+        replaceMe(tile);
+        return tile;
     }
 
     public boolean tileFits(byte type)
     {
         // "type" to końce linii czarnej, a "~type" to końce linii białej
-        return (type & knownWhite) == 0 && (~type & knownBlack)==0;
+        return countBits(type)==2 && (type & knownWhite) == 0 && (~type & knownBlack)==0;
     }
+
+    public boolean isDetermited()
+    {
+        return countBits(knownBlack)>1 || countBits(knownWhite) >1;
+    }
+
+    public boolean isDead() { return countBits(knownBlack)>2 || countBits(knownWhite) >2; }
 
     //Tutaj reagujemy na zmianę sąsiada.
     @Override
@@ -52,11 +68,6 @@ public class EmptyCell extends Cell
                 knownBlack &= 15^ Cell.mask[direction]; // Skasuj ewentualny czarny
             }
         }
-    }
-
-    public boolean isDetermited()
-    {
-        return countBits(knownBlack)>1 || countBits(knownWhite) >1;
     }
 
     private static int countBits(byte val)

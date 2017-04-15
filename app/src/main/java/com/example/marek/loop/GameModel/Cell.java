@@ -12,20 +12,10 @@ public abstract class Cell
     private Cell[] neighbours;
     private Position position;
 
-    public Cell(Position position) {
+    public Cell(Position position)
+    {
         this.position = position;
         neighbours = new Cell[4];
-    }
-
-    protected Cell(Cell other) //
-    {
-        this.position = other.position;
-        this.neighbours = new Cell[4];
-        for(int dir =0; dir<4; dir++)
-        {
-            if (other.neighbours[dir]!=null)
-                append(dir,other.neighbours[dir]);
-        }
     }
 
     public final Position getPosition()
@@ -68,15 +58,17 @@ public abstract class Cell
 
     /** Ta metoda reaguje na zmianę sąsiada.
      * Będzie jej używała klasa EmptyCell aby poznać swoje otoczenie,
-     * a klasa tile będzie
+     * a klasa Tile będzie sprawdzała zgodność kolorów.
       */
     protected void fireAppend(int direction, Cell cell) {}
 
-    // Ta metoda
+    // Ta metoda przypina sąsiada.
     public void append(int direction, Cell cell)
     {
         if (direction<0 || direction >3) throw new IllegalArgumentException("Invalid direction.");
-        if (neighbours[direction]==cell) return;
+        if (cell==null || neighbours[direction]==cell) return; // Nie przypinaj null
+        if (!cell.position.equals(position.getNeighbour(direction)))
+            throw new IllegalArgumentException("Appending neighbour from wrong side.");
         if (neighbours[direction]!=null)
             neighbours[direction].neighbours[direction ^2]=null; // Skasuj starego sąsiada
         fireAppend(direction,cell); // Zastanów się, czy zmiana sasiada coś znaczy
@@ -92,12 +84,30 @@ public abstract class Cell
 
     /**
      * Usuwa wszystkie grafowe połączenia komórki. Wywoływać dla pewności, przy usuwaniu z grafu.
-     */
+     *
     protected void forgetMe()
     {
         for (int dir = 0; dir < 3; dir++)
             if (neighbours[dir] != null)
                 neighbours[dir].neighbours[dir ^ 2] = null;
+    } // */
+
+    protected void replaceMe(Cell other)
+    {
+        //if (!other.position.equals(position)) throw new IllegalArgumentException("Positions do not agree.");
+        for(int dir =0; dir<4; dir++)
+        {
+            if (neighbours[dir]!=null)
+                other.append(dir,neighbours[dir]);
+            neighbours[dir]=null;
+        }
+    }
+
+    protected Tile getTileNeighbour(int direction)
+    {
+        Cell neighbour = getNeighbour(direction);
+        if (neighbour==null || !neighbour.isTile()) return null;
+        return (Tile) neighbour;
     }
 
     // Maski bitowe kierunków na potrzeby klas konretnych
