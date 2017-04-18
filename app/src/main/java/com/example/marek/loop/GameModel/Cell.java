@@ -6,7 +6,6 @@ import java.util.Arrays;
  * Created by marek on 11.04.17.
  * Beeing updated by Piotr since 13.04.17
  */
-
 public abstract class Cell
 {
     private Cell[] neighbours;
@@ -23,13 +22,17 @@ public abstract class Cell
         return position;
     }
 
-    public Cell getNeighbour(int direction)
+    public final Cell getNeighbour(int direction)
     {
         if (direction<0 || direction >3) throw new IllegalArgumentException("Invalid direction.");
         return neighbours[direction];
     }
 
-    public int getDirection(Cell nighbour)
+    /** Funkcja odwrotna do getNeighbour(direction)
+     * @param nighbour pewnien sąsiad pola/komórki
+     * @return kierunek dir taki, że getNeighbour(dir)==nighbour
+     */
+    public final int getDirection(Cell nighbour)
     {
         if (nighbour==null) return -1;
         // Rozwiązanie obliczeniowe
@@ -56,9 +59,8 @@ public abstract class Cell
         return direction;
     }
 
-    /** Ta metoda reaguje na zmianę sąsiada.
-     * Będzie jej używała klasa EmptyCell aby poznać swoje otoczenie,
-     * a klasa Tile będzie sprawdzała zgodność kolorów.
+    /** Ta metoda reaguje na zmianę sąsiada. Będzie jej używała klasa EmptyCell aby poznać
+     * swoje otoczenie, a klasa Tile będzie sprawdzała zgodność kolorów.
       */
     protected void fireAppend(int direction, Cell cell) {}
 
@@ -82,32 +84,22 @@ public abstract class Cell
         return false;
     }
 
-    /**
-     * Usuwa wszystkie grafowe połączenia komórki. Wywoływać dla pewności, przy usuwaniu z grafu.
-     *
-    protected void forgetMe()
-    {
-        for (int dir = 0; dir < 3; dir++)
-            if (neighbours[dir] != null)
-                neighbours[dir].neighbours[dir ^ 2] = null;
-    } // */
-
-    protected void replaceMe(Cell other)
+    /** Metoda pomocnicza do zastępowania płytki inną płytką. Kopiuje i powiadamia sąsiadów.
+     * @param other
+     */
+    void replaceMe(Cell other)
     {
         //if (!other.position.equals(position)) throw new IllegalArgumentException("Positions do not agree.");
         for(int dir =0; dir<4; dir++)
         {
             if (neighbours[dir]!=null)
-                other.append(dir,neighbours[dir]);
+            {
+                //if (other==null) neighbours[dir].neighbours[dir^2]=null;
+                //else
+                other.append(dir, neighbours[dir]);
+            }
             neighbours[dir]=null;
         }
-    }
-
-    protected Tile getTileNeighbour(int direction)
-    {
-        Cell neighbour = getNeighbour(direction);
-        if (neighbour==null || !neighbour.isTile()) return null;
-        return (Tile) neighbour;
     }
 
     // Maski bitowe kierunków na potrzeby klas konretnych

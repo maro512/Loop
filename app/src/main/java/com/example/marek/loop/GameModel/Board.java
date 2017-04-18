@@ -3,13 +3,15 @@ package com.example.marek.loop.GameModel;
 import java.util.*;
 
 /**
- * Created by marek on 11.04.17.
+ * Klas opisująca planszę LOOP. Kontroluje dodawanie płytek i automatyczne uzupełnianie.
+ * Ponadto sprawdza powstawanie linii wygrywających.
+ * Created by Piotr on 2017-04-15.
  */
-
 public class Board
 {
-    private Map<Position, Cell> graph;
+    private Map<BasicPosition, Cell> graph;
     private boolean whiteWin, blackWin;
+    private int minX, minY, maxX, maxY;
 
     public Board()
     {
@@ -17,15 +19,35 @@ public class Board
         minimalWinningLength=8;
         Cell first = new EmptyCell( new Position(0,0) );
         graph.put(first.getPosition(),first );
-        whiteWin=blackWin= false; // Liczba zwycięskich linii
+        whiteWin= blackWin= false; // Istnienie zwycięskich linii
+        minX=minY=maxX=maxY=0;
     }
 
-    //TODO
-    public Map<Position, Cell> getCrrPosition() {  // czy dobry typ?
+    public int getMinX()
+    {
+        return minX;
+    }
+
+    public int getMinY()
+    {
+        return minY;
+    }
+
+    public int getMaxX()
+    {
+        return maxX;
+    }
+
+    public int getMaxY()
+    {
+        return maxY;
+    }
+
+    public Map<BasicPosition, Cell> getCrrPosition() {  // czy dobry typ?
         return Collections.unmodifiableMap(graph);
     }
     /* //Wywaliłem, bo to sprzeczne z zasadą hermatyzacji danych.
-    public void setCrrPosition(Map<Position, Cell> graph) { // ?????
+    public void setCrrPosition(Map<Position, Cell> graph) {
         this.graph = graph;
     } // */
 
@@ -51,7 +73,7 @@ public class Board
     /*
     public byte getCell(int x, int y)
     {
-        Cell cell = graph.get(new Position(x,y));
+        Cell cell = graph.get(tempPos.set(x,y));
         if (cell==null) return 0;
         if (cell.isTile()) return ((Tile) cell).getType();
         return 1;
@@ -63,7 +85,7 @@ public class Board
      */
     public EmptyCell getAvailablePlace(int x, int y)
     {
-        Position p = new Position(x,y);
+        BasicPosition p = tempPos.set(x,y);
         Cell place = graph.get(p);
         if (place==null || place.isTile()) return null;
         return (EmptyCell) place;
@@ -80,6 +102,10 @@ public class Board
         addTile(tile);
     }
 
+    /** Dodaje płytkę na planszy (płytka ma dobrze określonych sąsiadów itd.) i automatycznie
+     * uzupełnia miejsca deterministyczne. Ponadto wykonuje sprawdzenie, czy nie powstała pętla (linia wygrywająca)
+     * @param tile płytka z dobrze określonymi sąsiadami (najlepiej wygenerowana z EmptyCell)
+     */
     private void addTile(Tile tile)
     {
         graph.put(tile.getPosition(),tile); // Dodaj płytkę do mapy (nadpisując poprzednią w tym miejscu)
@@ -91,6 +117,7 @@ public class Board
                 Position next = tile.getPosition().getNeighbour(dir);
                 EmptyCell newplace = new EmptyCell(next); // Stwórz nowe wolne pole
                 graph.put(next, newplace); // Dodaj pole do listy
+                extendBoundary(next); // Uaktualnij "wymiary plaszy"
                 for (int dir2 = 0; dir2 < 4; dir2++) // Dopnij sąsiadów do nowego pustego pola
                 {
                     Position next2 = next.getNeighbour(dir2); // Pobierz pozycję
@@ -105,14 +132,23 @@ public class Board
                 else addTile(place.createTile()); // Stwórz i wstaw deterministyczną płytkę.
             }
         }
-        if (!whiteWin && checkWin(tile, false)) whiteWin=true;
-        if (!blackWin && checkWin(tile, true) ) blackWin=true;
+        if (!whiteWin && checkWin(tile, WHITE)) whiteWin=true;
+        if (!blackWin && checkWin(tile, BLACK)) blackWin=true;
+    }
+
+    // Poszerza zakresy współrzędnych, aby podana pozycja się w nich mieściła
+    private void extendBoundary(BasicPosition pos)
+    {
+        if (pos.getX()>maxX) maxX=pos.getX();
+        else if (pos.getX()<minX) minX=pos.getX();
+        if (pos.getY()>maxY) maxY=pos.getY();
+        else if (pos.getY()<minY) minY=pos.getY();
     }
 
     // Metoda sprawdzająca, czy z płytki nie wychodzi linia wygrywająca w danym kolorze.
     private boolean checkWin(Tile t, boolean color)
     {
-        Cell end1 = t.getColorNeighbour(color);
+        Cell end1 = t.getColorNeighbour(color); // Pierwszy sąsiad
         if (!end1.isTile()) return false; // Płytka nie jest połączona tym kolorem z innymi
         Tile end1prev= t;
         Tile end2prev= (Tile) end1;
@@ -124,6 +160,7 @@ public class Board
             if (end1==t) return true; // Pętla
             if (end1==null) return false; // Plansza jeszcze nie gotowa (będzie drugi test w przyszłości!)
         } while (end1.isTile());
+        if (((EmptyCell) end1).isDead()) return false; // Linia dochodząca do błędu nie może wygrać.
         Cell end2 = t; //.getColorNeighbour(color,false);
         do  // Szukaj drugiego końca linii
         {
@@ -132,10 +169,17 @@ public class Board
             end2prev=tile2;
             if (end2==null) return false; // Plansza jeszcze nie gotowa (będzie drugi test w przyszłości!)
         } while (end2.isTile());
+        if (((EmptyCell) end2).isDead()) return false; // Linia dochodząca do błędu nie może wygrać.
         int end1dir = end1.getDirection(end1prev); // Wyznacz kierunki zakończeń linii
         int end2dir = end2.getDirection(end2prev);
         if ((end1dir ^ end2dir)!=2) return false;  //Sprawdź przeciwstawność kierunków
         int length= end1.getPosition().distanceInDirection(end2.getPosition(),end1dir);
         return length> minimalWinningLength;
     }
+
+    // Taki pomocniczy obiekt do maltretowania. Chyba lepiej go modyfikować niż ciągle tworzyć new Position...
+    BasicPosition.Mutable tempPos = new BasicPosition.Mutable();
+
+    public static final boolean BLACK= true;
+    public static final boolean WHITE= false;
 }

@@ -2,6 +2,7 @@ package com.example.marek.loop.GameModel;
 
 /**
  * Created by marek on 11.04.17.
+ * Beeing updated by Piotr since 14.04.17
  */
 
 public class Tile extends Cell
@@ -17,10 +18,11 @@ public class Tile extends Cell
     public static final byte TYPE_SW =12; // Czarna z dołu w lewo
 
     public static final byte[] ALL_TYPES=
-            new byte[]{TYPE_SE, TYPE_NE, TYPE_NW, TYPE_SW, // Zakręt
-                    TYPE_NS, TYPE_WE}; // Skrzyżowanie
+            new byte[]{TYPE_SE, TYPE_NE, TYPE_NW, TYPE_SW, // Zakręty
+                    TYPE_NS, TYPE_WE}; // Skrzyżowania
 
-    public Tile(Position position, byte type)
+    // Konstruktor o zasięgu pakietowym, aby nikt nie tworzył płytek "od siebie".
+    Tile(Position position, byte type)
     {
         super(position);
         this.type = type;
@@ -31,7 +33,7 @@ public class Tile extends Cell
         return type;
     }
 
-    public boolean getColor(int direction) //na pewno ma byc boolean?
+    public boolean getColor(int direction)
     {
         return (mask[direction] & type) != 0;
     }
@@ -47,7 +49,7 @@ public class Tile extends Cell
         return getNeighbour(direction_out);
     }
 
-    /** Te moetody zwracają (dowolnego) sąsiada w wybranym kolorze.
+    /** Poniższa metoda zwraca (dowolnego) sąsiada w wybranym kolorze.
      * Zwrócony sasiad jest typu EmptyCell jedynie wtedy, gdy linia w wybranym kolorze
      * nie przełuża się poza płytkę.
      * @param color kolor linii, który nas interesuje (true="czarny", false="biały")
@@ -58,22 +60,11 @@ public class Tile extends Cell
         int direction= 0;
         while ( ((type & mask[direction]) == 0)==color ) direction++; // Znajdź odpowiedni bit
         Cell neighbour = getNeighbour(direction);
-        if (neighbour==null) throw new IllegalStateException("Tile's neighbour is null!");
-        if (!neighbour.isTile()) // "Pierwszy" sąsiad powinien nie być nullem
+        if (neighbour==null) throw new IllegalStateException("Tile's neighbour is null!");// Do usunięcia.
+        if (!neighbour.isTile()) // "Pierwszy" sąsiad powinien (jeśli to możliwe) być płytką
             return getNeighbour(otherEnd(direction));
         return neighbour;
     }
-
-    /*
-    public Tile getBlackNeighbour(boolean first)
-    {
-        int direction= 0;
-        while( (type & mask[direction]) == 0) direction++; // Znajdź niezerowy bit
-        Tile neighbour = getTileNeighbour(direction);
-        if (first && neighbour==null) // "Pierwszy" sąsiad powinien nie być nullem
-            return getTileNeighbour(otherEnd(direction));
-        return neighbour;
-    }*/
 
     @Override
     public boolean isTile()
@@ -99,9 +90,9 @@ public class Tile extends Cell
      */
     private int otherEnd(int direction)
     {
-        if (type%5==0) return (direction ^2);
-        if (type%9==3) return (direction ^1);
-        return (direction ^3);
+        if (type%5==0) return (direction ^2); // Linie proste [+] przerzucają na drugą stronę
+        if (type%9==3) return (direction ^1); // Zakręty "typu backslash" [\]
+        return (direction ^3); // Zakręty "typu slash" [/]
     }
 
 }

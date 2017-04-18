@@ -15,21 +15,23 @@ public class EmptyCell extends Cell
 
     private byte knownWhite, knownBlack;
 
-    public Tile createTile()
+    /** Tworzy płytkę zdeterminowaną. */
+    Tile createTile()
     {
         int black = countBits(knownBlack);
         int white = countBits(knownWhite);
         if (black<2 && white<2) throw new IllegalArgumentException("Cell is not determined!");
-        if ((knownWhite & knownBlack)!=0) throw new IllegalStateException("Unbelievable overlap of black and white line!");
+        // if ((knownWhite & knownBlack)!=0) throw new IllegalStateException("Unbelievable overlap of black and white line!");
         if (black>2 || white>2) // Trzy linie tego samego koloru?
             return null; // Nie istnieje taka płytka!
-        byte type = black==2 ? knownBlack : (byte) ~knownWhite;
+        byte type = black==2 ? knownBlack : (byte) (~knownWhite & 15);
         Tile tile =  new Tile(getPosition(),type);
         replaceMe(tile);
         return tile;
     }
 
-    public Tile createTile(byte type)
+    /** Wstawia płytkę danego typu. */
+    Tile createTile(byte type)
     {
         if (!tileFits(type)) throw new IllegalArgumentException("The given tile type does not fit.");
         Tile tile =  new Tile(getPosition(),type);
@@ -43,11 +45,14 @@ public class EmptyCell extends Cell
         return countBits(type)==2 && (type & knownWhite) == 0 && (~type & knownBlack)==0;
     }
 
+    // Pole zdeterminowane to takie na które pasuje conajwyżej jedna płytka.
     public boolean isDetermited()
     {
         return countBits(knownBlack)>1 || countBits(knownWhite) >1;
     }
 
+    /*  MARTWE POLE to takie, na które nie pasuje żadna płytka. Board nie udostępnia martwych pól,
+    ale ich też nie odpina od grafu, ponieważ płytki nie powinny mieć sąsiadów null. */
     public boolean isDead() { return countBits(knownBlack)>2 || countBits(knownWhite) >2; }
 
     //Tutaj reagujemy na zmianę sąsiada.
