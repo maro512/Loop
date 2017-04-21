@@ -19,61 +19,63 @@ public class Game {
         this.players = new Player[2];
     }
 
+    public Player pickFirstPlayer() {
+        Random rnd = new Random();
+        currentPlayer = rnd.nextInt(2);
+        return players[currentPlayer];
+    }
+
     /**
      * Metoda zwraca możliwe typy płytek, które mogą zostać położone
      * na danym polu.
-     * @param x, @param y - współrzędowolnego
+     * @param x, @param y - współrzędne
      * @return lista typów jako lista obiektów Byte,
      *         null, gdy nie da się postawić płytki
      */
     public List<Byte> getPossibleMoves(int x, int y) {
-        EmptyCell cell = board.getAvailablePlace(x, y);
+      List<Byte> possibilities = new LinkedList<Byte>;
+      EmptyCell cell = board.getAvailablePlace(x, y);
 
-        /*
-         * TODO:
-         *  - sprawdzanie każdego sąsiada i usuwanie niedozwolonych typów
-         *    z listy wszystkich typów
-         */
-
-        if (cell != null || !cell.isDead()) {
-          if (currentPlayer == BLACK)
-        } else {
-          return null;
+      if (cell != null && !cell.isDead()) {
+        for (int i=0; i<Tile.ALL_TYPES.length; ++i) {
+          if (cell.tileFits(Tile.ALL_TYPES[i])) {
+            add(Tile.ALL_TYPES[i]);
+          }
         }
-    }
-
-    public void startGame() {
-      pickFirstPlayer();
-
-      /**
-       * TODO:
-       *  - makeMove
-       *  - kontrola wygranej
-       *  - zmiana gracza (while)
-       */
-    }
-
-    public boolean isTerminal(){
-        return board.isWhiteWin() || board.isBlackWin();
-    }
-
-    // możliwe, że do usunięcia
-    public Position getInitPosition() { // co ma zwracac?
+      } else {
         return null;
+      }
+
+      return possibilities;
     }
 
+    /**
+     * Zakładam, że dostaję od interfejsu TYLKO płytki z prawidłowym typem
+     * i miejscem (getPossibleMoves zapobiega złym typom)
+     */
+    public void makeMove(int x, int y, byte type) {
+      board.setTile(board.getAvailablePlace(x, y), type);
+    }
+
+    public Player changePlayer() {
+      ++currentPlayer;
+      currentPlayer %= 2;
+      return players[currentPlayer];
+    }
+
+    /**
+     * Zwraca zwycięzcę, jeśli gra jest rozstrzygnięta;
+     * jeżeli nie jest, zwraca null.
+     */
     public Player whoWon() {
       if (board.isWhiteWin()) {
         return players[WHITE];
-      } else if (board.isBlackWin) {
+      } else if (board.isBlackWin()) {
         return players[BLACK];
+      } else {
+        return null;
       }
     }
 
     public Player getCrrPlayer() { return players[currentPlayer]; }
-
-    private void pickFirstPlayer() {
-        Random rnd = new Random();
-        currentPlayer = rnd.nextInt(2);
-    }
 }
